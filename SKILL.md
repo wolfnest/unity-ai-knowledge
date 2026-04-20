@@ -78,7 +78,7 @@ Never give vague advice. Always produce:
 6. **Component-typed prefab references** — `Bullet bulletPrefab`, not `GameObject bulletPrefab`
 7. **Cached GetComponent** — in `Awake()`, never in `Update()`
 8. **Self-init pattern** — finds its own dependencies, no `Initialize(8 params)` chains
-9. **Collision callbacks filter + guard** — `OnTriggerEnter2D`/`OnCollisionEnter2D` always filter by `CompareTag` and use `TryGetComponent<T>`, not unchecked `GetComponent`
+9. **Collision callbacks filter + guard** — `OnTriggerEnter2D`/`OnCollisionEnter2D` use `GetComponent<T>()` + null check for clarity
 
 ### Every Architecture Recommendation Must Include
 
@@ -257,16 +257,15 @@ Red Flag #1 (silent null guards) is about **required dependencies being broken**
 | Cross-system managers (GameManager, etc.) | **YES** — `?.` is correct | Optional for entity's core behavior |
 | Other entities that may not exist | **YES** | They're genuinely optional |
 | **`OnTriggerEnter2D` / `OnCollisionEnter2D` callbacks** | **YES — ALWAYS** | **Filter collisions by type. Best practice, NOT a silent guard.** |
-| **`TryGetComponent<T>()` on collision target** | **YES** | **The component may legitimately not exist on other objects.** |
+| **`GetComponent<T>()` on collision target** | **YES** | **The component may legitimately not exist on other objects.** |
 | Optional events (`m_onAchievement`) | **YES** — `?.Invoke()` | Event is cosmetic |
 
 **Correct collision handling (this is NOT a Red Flag #1 violation):**
 ```csharp
 private void OnTriggerEnter2D(Collider2D other)
 {
-    if (other == null) return;                                     // ✅ Defensive
-    if (!other.CompareTag("Enemy")) return;                        // ✅ Type filter
-    if (!other.TryGetComponent<Monster>(out var monster)) return;  // ✅ Component check
+    var monster = other.GetComponent<Monster>();
+    if (monster == null) return;
     monster.TakeDamage(m_damage);
 }
 ```
